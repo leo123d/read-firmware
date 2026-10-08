@@ -20,6 +20,7 @@
 #define NVS_NS "read_pico"
 #define NVS_KEY_SLEEP "sleep"
 #define NVS_KEY_FONT "font"
+#define NVS_KEY_WGHT "wght"
 #define NVS_KEY_WAKE "lwake"
 #define NVS_KEY_BOOT "lboot"
 #define NVS_KEY_PICKUP "pickup"
@@ -29,6 +30,8 @@
 
 static app_sleep_mode_t s_sleep = APP_SLEEP_DEEP;
 static char s_font[FONT_PATH_MAX];
+// 字重按百位存：3=300 细，4=400 常规，7=700 粗。/ Weight in hundreds: 3=300 light, 4=400 regular, 7=700 bold.
+static uint8_t s_font_wght = 4;
 static uint8_t s_last_wake;
 static uint8_t s_last_boot;
 static bool s_pickup_wake;
@@ -37,6 +40,10 @@ static bool s_book_shake;
 
 static uint8_t valid_book_px(uint8_t px) {
     return px >= 36 && px <= 72 && (px - 36) % 4 == 0 ? px : 48;
+}
+
+static uint8_t valid_wght(uint8_t w) {
+    return (w == 3 || w == 4 || w == 7) ? w : 4;
 }
 
 void app_settings_init(void) {
@@ -60,6 +67,8 @@ void app_settings_init(void) {
     if (nvs_get_str(h, NVS_KEY_FONT, s_font, &font_len) != ESP_OK) {
         s_font[0] = '\0';
     }
+    uint8_t wght = 4;
+    if (nvs_get_u8(h, NVS_KEY_WGHT, &wght) == ESP_OK) s_font_wght = valid_wght(wght);
     uint8_t wake = 0;
     if (nvs_get_u8(h, NVS_KEY_WAKE, &wake) == ESP_OK) s_last_wake = wake;
     uint8_t boot = 0;
@@ -150,6 +159,17 @@ void app_settings_set_font_path(const char* path) {
     nvs_set_str(h, NVS_KEY_FONT, s_font);
     nvs_commit(h);
     nvs_close(h);
+}
+
+int app_settings_font_wght(void) {
+    return (int)s_font_wght * 100;
+}
+
+void app_settings_set_font_wght(int wght) {
+    uint8_t hundreds = valid_wght((uint8_t)((wght + 50) / 100));
+    if (s_font_wght == hundreds) return;
+    s_font_wght = hundreds;
+    nvs_put_u8(NVS_KEY_WGHT, hundreds);
 }
 
 uint8_t app_settings_book_px(void) {

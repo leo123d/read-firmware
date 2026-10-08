@@ -28,6 +28,10 @@ const char* app_sleep_mode_name(app_sleep_mode_t mode);
 /// 空路径表示固件内建字体；非空为 SD 上的 TTF。/ Empty path is the built-in font; non-empty is a TTF on the SD card.
 const char* app_settings_font_path(void);
 void app_settings_set_font_path(const char* path);
+/// 阅读字重，只有 300/400/700（细/常规/粗），默认 400。/ Reading weight, only 300/400/700 (light/regular/bold), default 400.
+int app_settings_font_wght(void);
+/// 只接受 300/400/700，其他值恢复 400。/ Only 300/400/700 accepted; anything else falls back to 400.
+void app_settings_set_font_wght(int wght);
 /// 上次浅睡唤醒源（app_wake_source_t），掉电也保留。/ Last light-sleep wake source (app_wake_source_t); kept across power loss.
 uint8_t app_settings_last_wake(void);
 void app_settings_set_last_wake(uint8_t src);
