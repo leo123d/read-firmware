@@ -326,7 +326,7 @@ flowchart TD
 | --- | --- | --- | --- |
 | 书架 / 阅读 | `app_book.c` | enter_full, owns_keys | 手势入口接管三键为上页/工具条/下页；工具条保留强刷，长按中键或把手开演示菜单；翻页抬起提交；晃动实验默认关只翻下页；`render()` 只绘图 |
 | 传书 | `app_transfer.c` | enter_full | 热点与已有 WiFi 双模式，离页停网；`render()` 只画快照；停止后回到进入前位置；联网后给网址二维码 |
-| 字体 | `app_font_pick.c` | enter_full | 列表行高 `UI_BTN_H`；行数与样本数由剩余高度解出；换字体或字重整屏 GC16 |
+| 字体 | `app_font_pick.c` | enter_full | 列表行高 `UI_BTN_H`；点选即换字体；字重只有细/常规/粗三档，存 NVS 全局生效；不提供字形缓存跑分；换字体或字重整屏 GC16 |
 | 存储 | `app_storage.c` | — | 无字体走 `ui_draw_no_font_page`；格式化两次确认（**会清空卡**）；底栏只留菜单把手；阅读版去掉蜂鸣器与探针区 |
 | 设置 | `app_settings.c` | enter_full | 底栏只留菜单把手；自检只在长按「关于」标题进入；字号 36..72 步长 4；拿起唤醒默认关 |
 | （隐藏）设备自检 | `app_selftest.c` | holds_pmu | 底栏只留探测 / 清空；不等闹钟、不目视灯、不断电续跑 |

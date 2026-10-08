@@ -1905,6 +1905,9 @@ static esp_err_t load_opened_font(void) {
     }
 
     font_ready = true;
+    // 加载字体会把字重重置回默认，这里恢复 NVS 里保存的字重。
+    // Loading a font resets the weight to default; restore the weight saved in NVS.
+    ttf_set_weight(app_settings_font_wght());
     ESP_LOGI(
         TAG, "%s %s, %d glyphs, glyf %u KB%s, gvar %u KB%s, working %u KB",
         glyf_ram != NULL ? "mapped" : "stream",

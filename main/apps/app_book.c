@@ -119,6 +119,7 @@ static bool s_scan_pending, s_resume_pending, s_toolbar, s_clear_confirm;
 static char s_resume_path[BOOK_STORE_PATH_MAX], s_resume_name[256];
 static char s_message[128], s_storage[128], s_path[BOOK_STORE_PATH_MAX], s_title[128];
 static char s_font_path[192];
+static int s_font_wght; // 排版时的字重；变了要重排 / Weight used for layout; a change forces re-layout
 static char* s_text;
 static blk_t* s_blocks;
 static size_t s_block_count;
@@ -859,6 +860,7 @@ static bool load_chapter(app_ctx_t* ctx, size_t chapter, size_t offset, bool las
     if (book_chapter_title(chapter, s_title, sizeof(s_title)) != ESP_OK)
         snprintf(s_title, sizeof(s_title), "第 %u 节", (unsigned)chapter + 1);
     copy_text(s_font_path, sizeof(s_font_path), ttf_font_path());
+    s_font_wght = ttf_get_weight();
     s_message[0] = 0;
     unlock_draw();
     return true;
@@ -1649,7 +1651,7 @@ static app_redraw_t on_tick(app_ctx_t* ctx) {
         ESP_LOGI(TAG, "settle du=%u", s_du_count);
         return APP_REDRAW_AREA;
     }
-    if (s_text && strcmp(s_font_path, ttf_font_path())) {
+    if (s_text && (strcmp(s_font_path, ttf_font_path()) || s_font_wght != ttf_get_weight())) {
         size_t off = book_layout_page_start_offset(s_page);
         save_progress();
         lock_draw();
@@ -1657,6 +1659,7 @@ static app_redraw_t on_tick(app_ctx_t* ctx) {
         bool ok = book_layout_build_blocks(s_text, s_text_len, s_blocks, s_block_count, body_rect(), s_px);
         if (ok) s_page = book_layout_page_for_offset(off);
         copy_text(s_font_path, sizeof(s_font_path), ttf_font_path());
+        s_font_wght = ttf_get_weight();
         unlock_draw();
         if (!ok) { free_book(); s_view = SHELF; copy_text(s_message, sizeof(s_message), "字体重排失败，请重新打开图书"); }
         return APP_REDRAW_PAGE;

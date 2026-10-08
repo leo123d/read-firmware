@@ -82,7 +82,7 @@ The function menu lists pages in the order defined in
 | --- | --- |
 | Books | UTF-8 / GBK TXT and EPUB from TF or internal storage, chapters, font size and per-book progress; swipe to turn, hold text for TOC and hold a shelf row for details, progress reset or confirmed deletion; filter storage sources, sort by name or recent reading, and search by pinyin, initials or English; single-book actions use a popup, while management supports batch selection, progress reset/deletion and rescan; experimental shake-to-turn defaults off. EPUB navigation supports NCX and nav documents. **Boot page.** |
 | Transfer | Device hotspot or existing WiFi, with browser TXT/EPUB upload and complete TTF font uploads to TF; TF card preferred, internal storage limited to 1 MB per file. Scan the hotspot QR to join, or select a 2.4 GHz network and enter its password on the touchscreen. Web provisioning remains available. The browser lists and searches books in the current upload destination, confirms replacement or deletion, and supports upload cancellation and retry. Saved WiFi can be forgotten on the device. Leaving the page stops networking. |
-| Font | Select TTF files from the card, preview typesetting and cycle font weight |
+| Font | Pick the built-in font or a card TTF with a tap, see a live type preview, and switch weight (light / regular / bold); the font and weight are remembered |
 | Storage | TF card capacity and mount status, remount, and format (two confirmations, erases the card). The self-rescue entry after a card loss |
 | Settings | Reading prefs (default size 36–72, shake turn), sleep and wake (light / deep / off, pickup wake) and About (battery and charging, build UTC time, free storage). Hold the About heading to open the device self-test |
 

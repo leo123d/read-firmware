@@ -3,6 +3,13 @@
 按日期和作者简述对用户可见的功能变化；详细实现历史见 Git。使用方法见 [README](../README.zh-CN.md)。
 User-visible changes by date and author; Git retains implementation history. See [README](../README.md) for usage.
 
+## 2026-10-08 · leo123d
+
+- 字体页改版：点选即换字体，字重收敛为细 / 常规 / 粗三档，与字体一起保存，阅读和界面全局生效；移除面向开发者的冷/热启动缓存跑分与裸数字字重按钮。
+  Font page redesign: a tap switches the font; weight collapses to light / regular / bold, is saved with the font and applies app-wide; the developer-only cold/warm cache bench and the raw-number weight button are removed.
+- 修复：原字重设置不保存、离开字体页即失效，只影响预览；现在开机恢复，换字体后保持，改字重后图书自动重排。
+  Fix: the old weight was preview-only and reset on leaving the page; it now restores at boot, survives font switches and triggers book re-layout on change.
+
 ## 2026-10-07 · leo123d
 
 - 定位：本仓库改为**纯阅读固件**（阅读版 / Read），只服务阅读。开机直接进书架，不再进演示菜单。
