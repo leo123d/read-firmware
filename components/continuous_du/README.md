@@ -20,19 +20,21 @@ the previous position is still being erased.
 
 ## 为什么 / Why
 
-若每个触摸报点都发送完整 DU，跟手速率会受限于波形长度。将波形拆分到多次扫描中，「这个点有多黑」与「多久扫描一次」即可解耦，本仓库的触摸演示才能做到跟手。
+若每个触摸报点都发送完整 DU，跟手速率会受限于波形长度。将波形拆分到多次扫描中，「这个点有多黑」与「多久扫描一次」即可解耦，触屏界面才能做到跟手。
 
 Sending a full DU per touch report caps the follow rate at the waveform length.
 Splitting the waveform across scans decouples "how dark is this dot" from "how often
-can I scan", which is what makes the touch demo in this repo track a finger.
+can I scan", which is what lets a touch UI track a finger.
 
 ## 用法 / Usage
 
-见本仓库固件的 `main/apps/app_touch.c`：标记新圆点、擦除旧圆点，busy 期间调用 `continuous_du_scan()`，抬手时先对齐 `hl.back_fb`，再回到普通 GC16 刷新。
+典型用法：标记新圆点、擦除旧圆点，busy 期间调用 `continuous_du_scan()`，抬手时先对齐 `hl.back_fb`，再回到普通 GC16 刷新。页面通过 `app_ctx_t.continuous_ready`（见 `main/app/app.h`）得知组件已初始化；本仓库的阅读版固件没有专门的触摸演示页。
 
-See `main/apps/app_touch.c` in the Read Pico firmware: mark the new dot positions, unmark
-the old ones, call `continuous_du_scan()` while busy, and on finger-up fix up
-`hl.back_fb` before falling back to a normal GC16 update.
+Typical usage: mark the new dot positions, unmark the old ones, call
+`continuous_du_scan()` while busy, and on finger-up fix up `hl.back_fb` before
+falling back to a normal GC16 update. Pages learn that the component is
+initialized through `app_ctx_t.continuous_ready` (see `main/app/app.h`); the
+reading-only firmware in this repository has no dedicated touch demo page.
 
 ## 许可 / License
 
