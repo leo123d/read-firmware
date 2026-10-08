@@ -87,6 +87,7 @@ main/
   app_main.c        开机装配，随后交给 app_loop
   app/              app 接口（app.h）、注册表、事件循环
   apps/             每个页面一个文件，只导出 app_desc_t
+  book/             TXT/EPUB 解析、排版、进度与存储
   ui/               ui_kit 绘制原语与布局常量、ui_menu 两层菜单
   font/             stb_truetype 字形缓存
   factory/          设备功能自检与出厂 VCOM 标定
@@ -102,7 +103,7 @@ assets/             图片素材（main/assets/*.bin 的来源）
 tools/              字体与图片转换脚本
 ```
 
-新增演示页：在 `main/apps/` 新建文件，实现 `app_desc_t` 中需要的回调，
+新增页面：在 `main/apps/` 新建文件，实现 `app_desc_t` 中需要的回调，
 再加入 `main/app/app_registry.c` 的菜单表。主循环不需要改动。
 
 ## 引脚
@@ -118,8 +119,10 @@ tools/              字体与图片转换脚本
 | TF 卡 CLK / CMD / D0 | 38 / 42 / 44 |
 | 蜂鸣器 | 2 |
 
-屏电源开关、XOE、MODE、VCOM_EN、触摸复位和卡检测位于 FCA9555 的 Port-0，
-见 [main/apps/app_ioe.c](main/apps/app_ioe.c) 中的引脚表。
+屏电源开关、XOE、MODE、VCOM_EN、触摸复位和卡检测位于 FCA9555 的 Port-0：
+P0.0 MODE · P0.1 XOE · P0.2 CW_INT · P0.3 SY_EN · P0.4 VCOM_EN · P0.5 PGOOD ·
+P0.6 SD_CD · P0.7 TP_RST。位定义见
+[components/read_pico/read_pico_board.c](components/read_pico/read_pico_board.c)。
 
 ## 传书与使用限制
 
@@ -135,7 +138,7 @@ AP 与已有 WiFi 均提供传书网页二维码；热点页可切换连接 WiFi
 
 插图范围：基线 JPEG 优先在解码时缩小，允许最多放大两倍到显示尺寸以减少计算，原图最多16M像素、单边8192；PNG及渐进 JPEG 原图最多1M像素，解码堆上限4 MiB。输出不超过648×1000灰度像素，透明 PNG 合成白底；只缓存当前章节最近查看的一幅图片，同图关闭后再次打开可复用；超限、缺失、损坏或不支持的图片在点击后说明原因，不中断正文阅读。同一归一化资源路径再次出现时显示“重复图片”和本次打开图书后已读章节中的最早节号（EPUB目录顺序包含封面、前言，可能不同于正文章号）。章首连续图片后紧接标题时，这些图片及已识别的同资源引用单独显示“标题图”，不重复显示首次位置；标题后的其他插图仍保留已读最早提示；不扫描未读章节，不声称是全书首次位置，关闭图书后记录清空；不同路径下的相同内容不作匹配；支持 SVG 包装中的 JPEG/PNG 引用，不绘制纯 SVG 矢量、CSS背景或外链图片。解码器来源与许可见 [第三方说明](main/book/vendor/README.md)。
 
-内置字体仅覆盖界面和演示正文，阅读外部中文书籍请将完整中文 TTF 放到 TF 卡的 `fonts/` 或 `assets/fonts/`，再在“字体”页选用。默认字体路径为 `fonts/ChillDuanSansVF.ttf`；缺字时应检查卡上字体文件和所选字体的字形覆盖。仓库提供 [TF 部署字体与版权说明](sdcard/README.md)。也可通过 WiFi 网页的“上传字体”区上传到 `/sdcard/fonts`：单文件上限 32 MiB，仅支持带 TrueType 轮廓的 TTF（不支持 OTF/CFF、TTC、WOFF）。上传前检查容量，同名替换需确认，校验失败或中断保留旧字体；停止传书后在设备“字体”页选用。传书期间暂用内置字体，防止替换正在读取的字库；不会改变已保存的字体选择。
+内置字体仅覆盖界面文字，阅读外部中文书籍请将完整中文 TTF 放到 TF 卡的 `fonts/` 或 `assets/fonts/`，再在“字体”页选用。默认字体路径为 `fonts/ChillDuanSansVF.ttf`；缺字时应检查卡上字体文件和所选字体的字形覆盖。仓库提供 [TF 部署字体与版权说明](sdcard/README.md)。也可通过 WiFi 网页的“上传字体”区上传到 `/sdcard/fonts`：单文件上限 32 MiB，仅支持带 TrueType 轮廓的 TTF（不支持 OTF/CFF、TTC、WOFF）。上传前检查容量，同名替换需确认，校验失败或中断保留旧字体；停止传书后在设备“字体”页选用。传书期间暂用内置字体，防止替换正在读取的字库；不会改变已保存的字体选择。
 
 功能变化见 [版本变更](docs/CHANGELOG.md)。离线拼音字表来自 pypinyin（MIT），见 [组件许可与再生成说明](components/read_pico_search/README.md)。
 

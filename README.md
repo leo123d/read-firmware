@@ -98,7 +98,8 @@ In Books, KEY1 / KEY2 / KEY3 select previous page / toolbar / next page. The too
 main/
   app_main.c        Boot wiring, then app_loop
   app/              App interface (app.h), registry and event loop
-  apps/             One demo per file, exporting only app_desc_t
+  apps/             One page per file, exporting only app_desc_t
+  book/             TXT/EPUB parsing, layout, progress and storage
   ui/               ui_kit drawing primitives and layout constants; ui_menu two-level menu
   font/             stb_truetype glyph cache
   factory/          Device self-test and factory VCOM calibration
@@ -114,7 +115,7 @@ assets/             Image sources for main/assets/*.bin
 tools/              Font and image conversion scripts
 ```
 
-To add a demo page, create a file in `main/apps/`, implement the `app_desc_t`
+To add a page, create a file in `main/apps/`, implement the `app_desc_t`
 callbacks you need and add it to the menu table in `main/app/app_registry.c`.
 The main loop stays untouched.
 
@@ -132,7 +133,9 @@ The main loop stays untouched.
 | Buzzer | 2 |
 
 EPD power enable, XOE, MODE, VCOM_EN, touch reset and card detection are on FCA9555
-Port-0; see the pin table in [main/apps/app_ioe.c](main/apps/app_ioe.c).
+Port-0: P0.0 MODE · P0.1 XOE · P0.2 CW_INT · P0.3 SY_EN · P0.4 VCOM_EN · P0.5 PGOOD ·
+P0.6 SD_CD · P0.7 TP_RST. The bit definitions live in
+[components/read_pico/read_pico_board.c](components/read_pico/read_pico_board.c).
 
 ## Transfer and limitations
 
@@ -148,7 +151,7 @@ Swipe page turns commit on release at 64 pixels (previously 120); movement beyon
 
 Illustration limits: baseline JPEG favors decode-time scaling with at most 2x enlargement to the display size, up to 16M source pixels and 8192 per side; PNG and progressive JPEG allow up to 1M source pixels and a 4 MiB decoder heap. Output fits 648x1000 grayscale pixels; transparent PNG uses a white background. Only the most recently viewed image in the current chapter is cached; closing a preview and reopening that same image reuses it. Missing, corrupt, oversized or unsupported images show an explanation on request and leave text readable. Repeated references to the same normalized EPUB resource path show “重复图片” and the earliest numbered section among chapters visited during this book opening (EPUB section order includes covers and front matter, so it can differ from printed chapter numbers). Opening image blocks immediately followed by a heading, and recognized references to those same resources, use a separate “标题图” label without the first-location line; other illustrations keep the visited-origin hint. This is not a scan of unread chapters or a claim about the first occurrence in the whole book; the history resets when the book closes. Identical content under different resource paths is not matched. JPEG/PNG references inside SVG wrappers work; pure SVG vectors, CSS backgrounds and remote images do not. See [decoder sources and licenses](main/book/vendor/README.md).
 
-The built-in font covers the UI and demo text only. For external Chinese books, place a complete Chinese TTF in `fonts/` or `assets/fonts/` on the TF card and select it on the Fonts page. The default path is `fonts/ChillDuanSansVF.ttf`; for missing characters, check that the file exists and the selected font covers them. A complete font and its copyright notices are provided in the [TF deployment package](sdcard/README.md). The webpage also accepts fonts into `/sdcard/fonts`: up to 32 MiB per TTF with TrueType outlines, excluding OTF/CFF, TTC and WOFF. Capacity is checked first, replacements require confirmation, and interrupted or invalid uploads retain the old file. Stop transfer, then select the font on the device. Transfer temporarily uses the built-in font to avoid replacing an open font; the saved selection is retained.
+The built-in font covers the UI text only. For external Chinese books, place a complete Chinese TTF in `fonts/` or `assets/fonts/` on the TF card and select it on the Fonts page. The default path is `fonts/ChillDuanSansVF.ttf`; for missing characters, check that the file exists and the selected font covers them. A complete font and its copyright notices are provided in the [TF deployment package](sdcard/README.md). The webpage also accepts fonts into `/sdcard/fonts`: up to 32 MiB per TTF with TrueType outlines, excluding OTF/CFF, TTC and WOFF. Capacity is checked first, replacements require confirmation, and interrupted or invalid uploads retain the old file. Stop transfer, then select the font on the device. Transfer temporarily uses the built-in font to avoid replacing an open font; the saved selection is retained.
 
 See [Changelog](docs/CHANGELOG.md) for feature changes. Offline pinyin data comes from pypinyin under MIT; see the [component license and regeneration notes](components/read_pico_search/README.md).
 

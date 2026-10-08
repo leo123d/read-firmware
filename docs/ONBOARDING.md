@@ -28,10 +28,10 @@ This document is for **first-time human developers and AI agents**. After readin
 ## 1. 项目定位 / What this is
 
 - **产品**：小纸 Pico（英文/日文文案：Read Pico；型号 RDP-G01-W；内部代号 Read/0，仅限内部使用，不得出现在对外文案）。深圳 MindReset 出品的 4.7 英寸墨水屏开发板。
-- **本仓库**：随板出厂的**官方示例 / 出厂演示固件**。它有两个角色：
-  1. 用户通过功能菜单逐项检查硬件（屏、触摸、传感器、电源、TF 卡、蜂鸣器）。
-  2. 开发者以它的板级支持包（BSP）与芯片驱动为起点写自己的固件。
-- **不是**：通用阅读器产品固件。页面是"演示 + 自检"，不追求功能完备。
+- **本仓库**：在出厂演示固件 [MindReset/read_pico_firmware](https://github.com/MindReset/read_pico_firmware) 基础上裁剪出的**纯阅读固件**。菜单只有五项阅读页（书架 / 传书 / 字体 / 存储 / 设置），开机直接进书架；演示与诊断页已删除，设备自检只由开机断电续跑与设置页长按「关于」进入。
+  1. 用户用它阅读 TF 卡或内置存储里的 TXT/EPUB。
+  2. 开发者仍可以它的板级支持包（BSP）与芯片驱动为起点写自己的固件。
+- **不是**：出厂演示固件。逐项检查硬件的页面不在本仓库，看演示功能请看上游。
 - **许可**：主体 Apache-2.0；`components/epdiy` 为 LGPL-3.0-or-later（上游 epdiy v2.0.0 的裁剪 fork）；内置字体 ChillDuanSans 为 SIL OFL-1.1。复用/分发前看各组件 `LICENSE`。
 - **仓库关系**：上游为 `MindReset/read_pico_firmware`。在 fork 上工作时把上游加为 `upstream` 远端；向上游提 PR 前请阅读 [CONTRIBUTING.md](../CONTRIBUTING.md)。
 - **配套生态**：Dot Open Platform <https://github.com/MindReset/dot_open_platform>。
@@ -140,7 +140,7 @@ python -m serial.tools.miniterm COMx 115200     # Ctrl+] 退出，看开机日�
   ```
   I (...) boot: Loaded app from partition at offset 0x10000
   I (...) app_init: ESP-IDF:          v6.1
-  I (...) app_loop: UI ready on 概览 Overview
+  I (...) app_loop: UI ready on 图书 Books
   ```
   中间还应看到 `read_pico: I2C scan: 4 device(s)`（CST836U / SC7A20H / FCA9555 / CW32）和 `panel VCOM loaded from PMU`。没看串口只能写"已烧写未验证启动"。
 - `--after hard-reset` 会让 USB Serial/JTAG 重新枚举，端口消失约 1 s 再回来；miniterm 要在烧完后立即开，最早几行 ROM 日志可能看不到，不影响判据。想重演开机日志，跑一次 `python -m esptool -p COMx --before default-reset --after hard-reset read-mac` 等于按一次复位，接着用 pyserial 重试打开 `COMx` 读 10 s 即可（agent 无法用交互式 miniterm 时用这条路）。
@@ -208,11 +208,11 @@ idf.py size
 
 | 我想… | 去这里 |
 | --- | --- |
-| 加一个演示页 | `main/apps/app_xxx.c` + [main/app/app_registry.c](../main/app/app_registry.c) `s_apps[]` + [main/CMakeLists.txt](../main/CMakeLists.txt) `SRCS` |
+| 加一个页面 | `main/apps/app_xxx.c` + [main/app/app_registry.c](../main/app/app_registry.c) `s_apps[]` + [main/CMakeLists.txt](../main/CMakeLists.txt) `SRCS` |
 | 改菜单顺序 | [main/app/app_registry.c](../main/app/app_registry.c) |
 | 改刷新档位（GL16/GC16/DU、多少次软刷后压一次 GC16） | [main/app/app_config.h](../main/app/app_config.h) |
 | 改推屏、pclk、轨道空闲断电 | [main/display.c](../main/display.c) |
-| 改锁屏 / 浅睡 / 深睡 / 拿起唤醒 | [main/sleep.c](../main/sleep.c)、[main/apps/app_sleep.c](../main/apps/app_sleep.c) |
+| 改锁屏 / 浅睡 / 深睡 / 拿起唤醒 | [main/sleep.c](../main/sleep.c)、[main/apps/app_settings.c](../main/apps/app_settings.c)（睡眠设置入口） |
 | 加一个 NVS 设置项 | [main/settings.c](../main/settings.c)（命名空间 `read_pico`） |
 | 改排版常量、公共绘制原语 | [main/ui/ui_kit.h](../main/ui/ui_kit.h) / `ui_kit.c` |
 | 改两层菜单 / 三键区几何 | [main/ui/ui_menu.h](../main/ui/ui_menu.h) / `ui_menu.c` |
@@ -251,7 +251,7 @@ flowchart TD
   H -- 否 --> X["日志 No touch controller<br/>app_main return，停在开机图"]
   H -- 是 --> I{pmu_ready 且 VCOM 未标定?}
   I -- 是 --> J["vcom_setup_run()<br/>出厂标定拦截页"]
-  I -- 否 --> K["app_loop_run(first_app)<br/>自检续跑→自检页，否则→概览"]
+  I -- 否 --> K["app_loop_run(first_app)<br/>自检续跑→自检页，否则→书架"]
   J --> K
 ```
 
@@ -292,7 +292,7 @@ flowchart TD
 - 换页/怕残影 → `APP_REDRAW_FULL`（`APP_PAGE_FORCE_FULL` 时 GC16）。
 - 自己已经 `present` 过 → `APP_REDRAW_DONE`。
 
-标志：`enter_full`（进页整屏，当前 home / reading / font_pick / key / sleep 开着）、`holds_pmu`（独占 PMU，当前 key / selftest 开着；开着时电源键短按不锁屏）。
+标志：`enter_full`（进页整屏，当前 book / transfer / font_pick / settings 开着）、`holds_pmu`（独占 PMU，当前 selftest 开着；开着时电源键短按不锁屏）。
 
 ### 6.4 刷新策略（[main/app/app_config.h](../main/app/app_config.h) + [main/display.c](../main/display.c)）
 
@@ -318,34 +318,27 @@ flowchart TD
 
 ---
 
-## 7. 演示页与冻结决策速查 / Demo pages & Frozen decisions
+## 7. 页面与冻结决策速查 / Pages & Frozen decisions
 
 菜单顺序 = [main/app/app_registry.c](../main/app/app_registry.c) `s_apps[]`。每页文件头都有 `冻结 / Frozen:` 段，**改行为前必须先改那段并说明决策为何变化**。摘要（以文件头为准）：
 
 | 页 | 文件 | 标志 | Frozen 摘要 |
 | --- | --- | --- | --- |
-| 概览 | `app_home.c` | enter_full | — |
-| 墨水屏刷新 | `app_refresh.c` | — | GC16 / DU / 灰阶梯子与耗时矩阵 |
-| 阅读测试 | `app_reading.c` | enter_full | 后台排版任务跑在 core 1、结果放 PSRAM |
-| 触摸 | `app_touch.c` | — | 连续 DU 跟手；TAP_SLEEP 10 s 进深睡演示 |
-| 加速度 / 诊断 | `app_axis.c`（两个 `app_desc_t` 共享 `.user`） | — | 默认不跟手，点"监听"才 DU；敲击 200 Hz；FIFO 默认存满即停 |
-| 电源与电池 | `app_power.c` | — | 不关轨；**不写 SY7636A 任何寄存器**；只读条 |
-| 电源管理协议 | `app_pmu.c` | — | 四视图 信息/事件/配置/动作；Off/Reset/DL 走主机路径；不做出厂复位/硬复位/软睡；VCOM 只读 |
-| 电源按键 | `app_key.c` | holds_pmu, enter_full | 本页独占 PMU 事件，短按不锁屏；进页 GL16 后只刷变化块 |
-| 睡眠与唤醒 | `app_sleep.c` | enter_full | 底栏走 `ui_bar_rect`；拿起唤醒默认关；浅睡 350 mg / 3 拍 |
-| TF 卡与蜂鸣器 | `app_sd.c` | — | 无字体走 `ui_draw_no_font_page`；格式化两次确认（**会清空卡**）；探测 A/B/1b/4k |
-| 字体 | `app_font_pick.c` | enter_full | 列表行高 `UI_BTN_H`；行数由剩余高度解出；换字体/字重整屏 GC16 |
-| 扩展口 | `app_ioe.c` | — | CFG/INV 只读；不拨 SY_EN / VCOM_EN / MODE / XOE；只允许脉冲 TP_RST |
-| 设备功能自检 | `app_selftest.c` | holds_pmu | 底栏只留探测/清空；不等闹钟、不目视灯、不断电续跑 |
+| 书架 / 阅读 | `app_book.c` | enter_full, owns_keys | 手势入口接管三键为上页/工具条/下页；工具条保留强刷，长按中键或把手开演示菜单；翻页抬起提交；晃动实验默认关只翻下页；`render()` 只绘图 |
+| 传书 | `app_transfer.c` | enter_full | 热点与已有 WiFi 双模式，离页停网；`render()` 只画快照；停止后回到进入前位置；联网后给网址二维码 |
+| 字体 | `app_font_pick.c` | enter_full | 列表行高 `UI_BTN_H`；行数与样本数由剩余高度解出；换字体或字重整屏 GC16 |
+| 存储 | `app_storage.c` | — | 无字体走 `ui_draw_no_font_page`；格式化两次确认（**会清空卡**）；底栏只留菜单把手；阅读版去掉蜂鸣器与探针区 |
+| 设置 | `app_settings.c` | enter_full | 底栏只留菜单把手；自检只在长按「关于」标题进入；字号 36..72 步长 4；拿起唤醒默认关 |
+| （隐藏）设备自检 | `app_selftest.c` | holds_pmu | 底栏只留探测 / 清空；不等闹钟、不目视灯、不断电续跑 |
 | （出厂）VCOM 标定 | `factory/vcom_setup.c` | 非菜单页 | 副标题不写范围；数字带只用 FOLLOW DU；三位合法自动进确认；不写 ESP NVS |
 
 ---
 
 ## 8. 常见任务操作手册 / Playbooks
 
-### 8.1 加一个演示页
+### 8.1 加一个页面
 
-1. 复制一个结构相近的页（读数类抄 `app_power.c`，交互类抄 `app_sd.c`）到 `main/apps/app_xxx.c`。
+1. 复制一个结构相近的页（维护类抄 `app_storage.c`，交互类抄 `app_transfer.c`）到 `main/apps/app_xxx.c`。
 2. 写文件头（SPDX + 中文/English 职责 + 冻结/Frozen），只实现需要的回调，末尾导出一个 `const app_desc_t app_xxx`。
 3. `main/CMakeLists.txt` `SRCS` 加文件；`main/app/app_registry.c` `s_apps[]` 加条目（位置即菜单顺序）。
 4. 若用了新组件，`REQUIRES` 加上。

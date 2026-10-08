@@ -4,9 +4,9 @@
 
 Copy the entire `fonts/` directory, including `OFL.txt`, to the TF card root. Alternatively, select `fonts/ChillDuanSansVF.ttf` in the device webpage's font upload section, stop transfer after saving, and select the font on the device's Fonts page. The webpage accepts TTF only; keep the license with this deployment package.
 
-此字体不嵌入固件，不占用内置图书分区；运行时按需从 TF 卡读取。没有 TF 卡时，仍使用仅覆盖界面与演示文字的内置子集。
+此字体不嵌入固件，不占用内置图书分区；运行时按需从 TF 卡读取。没有 TF 卡时，仍使用仅覆盖界面文字的内置子集。
 
-This font is not embedded in firmware and does not consume the internal book partition. It is read from the TF card on demand. Without a card, the built-in subset covers the UI and demo text only.
+This font is not embedded in firmware and does not consume the internal book partition. It is read from the TF card on demand. Without a card, the built-in subset covers the UI text only.
 
 ## 字体来源与许可 / Font source and license
 
